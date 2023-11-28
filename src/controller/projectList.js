@@ -33,6 +33,7 @@ const getSpecificProject = async (req, res) => {
 
 const createNewProject = async (req, res) => {
   const { body, files } = req;
+  // console.log(files);
   try {
     await ProjectsModel.createNewProject(body, files);
     res.json({

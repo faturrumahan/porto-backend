@@ -1,3 +1,4 @@
+const axios = require("axios");
 const dbPool = require("../config/database");
 
 const getAllProjects = () => {
@@ -12,33 +13,36 @@ const getSpecificProject = (idProject) => {
   return dbPool.execute(sqlQuery);
 };
 
-const createNewProject = (body, files) => {
+const createNewProject = async (body, files) => {
   var dataName = [];
   var dataValue = [];
-  // console.log(body);
-  // for (let i = 0; i < body.length; i++) {
-  //   const name = body[i]["name"];
-  //   const value = body[i]["value"];
-  //   dataName.push(name);
-  //   dataValue.push(value);
-  // }
   for (const key in body) {
     dataName.push(key);
     dataValue.push(body[key]);
   }
-  var imageList;
-  for (let i = 0; i < files.length; i++) {
-    if (!imageList) {
-      imageList = files[i].path;
-    } else {
-      imageList += "," + files[i].path;
-    }
+
+  const imgurLinks = [];
+  for (const image of files) {
+    const imgurResponse = await axios.post(
+      "https://api.imgur.com/3/image",
+      {
+        image: image.buffer.toString("base64"),
+        type: "base64",
+      },
+      {
+        headers: {
+          Authorization: `Bearer f1d6f625e3b7aa57776b3b49229fe8ac236cb6fb`,
+        },
+      }
+    );
+
+    const imgurLink = imgurResponse.data.data.link;
+    imgurLinks.push(imgurLink);
   }
   dataName.push("image");
-  dataValue.push(imageList.replace(/\\/g, "/"));
+  dataValue.push(imgurLinks);
 
   const stringDataValue = dataValue.map((str) => `"${str}"`);
-  // console.log(stringDataValue);
   const sqlQuery = `INSERT INTO project_list (${dataName}) VALUES (${stringDataValue})`;
 
   return dbPool.execute(sqlQuery);
@@ -54,7 +58,6 @@ const updateProject = (body, files, idProject) => {
   }
 
   if (files.length > 0) {
-    console.log(files);
     for (let i = 0; i < files.length; i++) {
       if (!imageList) {
         imageList = files[i].path;
@@ -63,7 +66,6 @@ const updateProject = (body, files, idProject) => {
       }
     }
   }
-  console.log(imageList);
 
   let sqlQuery = "UPDATE project_list SET ";
   for (const [name, value] of Object.entries(values)) {
@@ -74,7 +76,6 @@ const updateProject = (body, files, idProject) => {
     sqlQuery += ` image = '${imageList.replace(/\\/g, "/")}'`;
   }
   sqlQuery += ` WHERE id = ${idProject}`; // Assuming you have a record_id variable
-  console.log(sqlQuery);
 
   return dbPool.execute(sqlQuery);
 };
