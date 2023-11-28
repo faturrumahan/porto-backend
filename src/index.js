@@ -17,6 +17,6 @@ app.use(express.json());
 app.use("/project", projectListRoutes);
 app.use("/src/assets/uploads", express.static("src/assets/uploads"));
 
-app.listen(PORT, () => {
-  console.log(`Running on port ${PORT}`);
-});
+// app.listen(PORT, () => {
+//   console.log(`Running on port ${PORT}`);
+// });
