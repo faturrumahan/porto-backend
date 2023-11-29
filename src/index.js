@@ -5,6 +5,7 @@ const express = require("express");
 const cors = require("cors");
 
 const projectListRoutes = require("./routes/projectList");
+const imgurRoutes = require("./routes/imgur");
 
 const middlewareLogRequest = require("./middleware/logs");
 
@@ -15,6 +16,7 @@ app.use(middlewareLogRequest);
 app.use(express.json());
 
 app.use("/project", projectListRoutes);
+app.use("/image", imgurRoutes);
 app.use("/src/assets/uploads", express.static("src/assets/uploads"));
 
 app.listen(PORT, () => {

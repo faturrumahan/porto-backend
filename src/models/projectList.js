@@ -16,12 +16,14 @@ const getSpecificProject = (idProject) => {
 const createNewProject = async (body, files) => {
   var dataName = [];
   var dataValue = [];
+  const imgurLinks = [];
+  const imgurDeleteHash = [];
+
   for (const key in body) {
     dataName.push(key);
     dataValue.push(body[key]);
   }
 
-  const imgurLinks = [];
   for (const image of files) {
     const imgurResponse = await axios.post(
       "https://api.imgur.com/3/image",
@@ -31,16 +33,21 @@ const createNewProject = async (body, files) => {
       },
       {
         headers: {
-          Authorization: `Bearer f1d6f625e3b7aa57776b3b49229fe8ac236cb6fb`,
+          Authorization: `Bearer ${process.env.BEARER_TOKEN}`,
         },
       }
     );
 
     const imgurLink = imgurResponse.data.data.link;
+    const deleteHash = imgurResponse.data.data.deletehash;
     imgurLinks.push(imgurLink);
+    imgurDeleteHash.push(deleteHash);
   }
+
   dataName.push("image");
   dataValue.push(imgurLinks);
+  dataName.push("delete_id");
+  dataValue.push(imgurDeleteHash);
 
   const stringDataValue = dataValue.map((str) => `"${str}"`);
   const sqlQuery = `INSERT INTO project_list (${dataName}) VALUES (${stringDataValue})`;

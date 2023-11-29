@@ -1,20 +1,10 @@
 const express = require("express");
 const multer = require("multer");
-// const path = require("path");
 
 const ProjectListController = require("../controller/projectList");
 
 const router = express.Router();
 
-// const storage = multer.diskStorage({
-//   destination: "src/assets/uploads",
-//   filename: (req, file, cb) => {
-//     return cb(
-//       null,
-//       `${file.fieldname}_${Date.now()}${path.extname(file.originalname)}`
-//     );
-//   },
-// });
 const storage = multer.memoryStorage();
 const upload = multer({
   storage: storage,
