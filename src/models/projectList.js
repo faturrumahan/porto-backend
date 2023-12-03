@@ -55,39 +55,82 @@ const createNewProject = async (body, files) => {
   return dbPool.execute(sqlQuery);
 };
 
-const updateProject = (body, files, idProject) => {
+const updateProject = async (body, files, idProject) => {
   const values = {};
-  let imageList;
+  const imgurLinks = [];
+  const imgurDeleteHash = [];
+  console.log(body);
+
   for (const key in body) {
-    const name = key;
-    const value = body[key];
-    values[name] = value;
+    if (key != "images") {
+      const name = key;
+      const value = body[key];
+      values[name] = value;
+    }
   }
 
   if (files.length > 0) {
-    for (let i = 0; i < files.length; i++) {
-      if (!imageList) {
-        imageList = files[i].path;
-      } else {
-        imageList += "," + files[i].path;
-      }
+    for (const image of files) {
+      const imgurResponse = await axios.post(
+        "https://api.imgur.com/3/image",
+        {
+          image: image.buffer.toString("base64"),
+          type: "base64",
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${process.env.BEARER_TOKEN}`,
+          },
+        }
+      );
+
+      const imgurLink = imgurResponse.data.data.link;
+      const deleteHash = imgurResponse.data.data.deletehash;
+      imgurLinks.push(imgurLink);
+      imgurDeleteHash.push(deleteHash);
     }
+    values["image"] = imgurLinks;
+    values["delete_id"] = imgurDeleteHash;
   }
+
+  // if (files.length > 0) {
+  //   for (let i = 0; i < files.length; i++) {
+  //     if (!imageList) {
+  //       imageList = files[i].path;
+  //     } else {
+  //       imageList += "," + files[i].path;
+  //     }
+  //   }
+  // }
 
   let sqlQuery = "UPDATE project_list SET ";
   for (const [name, value] of Object.entries(values)) {
     sqlQuery += `${name} = '${value}', `;
   }
-  sqlQuery = sqlQuery.slice(0, -1); // Remove the trailing comma and space
-  if (files.length > 0) {
-    sqlQuery += ` image = '${imageList.replace(/\\/g, "/")}'`;
-  }
+  sqlQuery = sqlQuery.slice(0, -2); // Remove the trailing comma and space
+  // if (files.length > 0) {
+  //   sqlQuery += ` image = '${imageList.replace(/\\/g, "/")}'`;
+  // }
   sqlQuery += ` WHERE id = ${idProject}`; // Assuming you have a record_id variable
+  console.log(sqlQuery);
 
   return dbPool.execute(sqlQuery);
 };
 
-const deleteProject = (idProject) => {
+const deleteProject = async (idProject) => {
+  const [data] = await getSpecificProject(idProject);
+  const deleteId = data[0].delete_id.split(",");
+  console.log(deleteId);
+  for (deleteHash of deleteId) {
+    const imgurResponse = await axios.delete(
+      `https://api.imgur.com/3/image/${deleteHash}`,
+      {
+        headers: {
+          Authorization: `Bearer ${process.env.BEARER_TOKEN}`,
+        },
+      }
+    );
+  }
   const sqlQuery = `delete from project_list where id=${idProject}`;
 
   return dbPool.execute(sqlQuery);
